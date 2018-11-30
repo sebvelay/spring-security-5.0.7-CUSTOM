@@ -21,7 +21,10 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.util.Assert;
 
 import java.util.Base64;
@@ -30,7 +33,7 @@ import java.util.Base64;
  * An {@link AbstractHttpConfigurer} for the OAuth 2.0 Implicit Grant type.
  *
  * <h2>Security Filters</h2>
- *
+ * <p>
  * The following {@code Filter}'s are populated:
  *
  * <ul>
@@ -38,7 +41,7 @@ import java.util.Base64;
  * </ul>
  *
  * <h2>Shared Objects Created</h2>
- *
+ * <p>
  * The following shared objects are populated:
  *
  * <ul>
@@ -46,7 +49,7 @@ import java.util.Base64;
  * </ul>
  *
  * <h2>Shared Objects Used</h2>
- *
+ * <p>
  * The following shared objects are used:
  *
  * <ul>
@@ -54,19 +57,20 @@ import java.util.Base64;
  * </ul>
  *
  * @author Joe Grandja
- * @since 5.0
  * @see OAuth2AuthorizationRequestRedirectFilter
  * @see ClientRegistrationRepository
+ * @since 5.0
  */
-public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> extends
-	AbstractHttpConfigurer<ImplicitGrantConfigurer<B>, B> {
+public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> extends AbstractHttpConfigurer<ImplicitGrantConfigurer<B>, B> {
 
 	private String authorizationRequestBaseUri;
 
 	/**
 	 * Sets the base {@code URI} used for authorization requests.
 	 *
-	 * @param authorizationRequestBaseUri the base {@code URI} used for authorization requests
+	 * @param authorizationRequestBaseUri
+	 * 		the base {@code URI} used for authorization requests
+	 *
 	 * @return the {@link ImplicitGrantConfigurer} for further configuration
 	 */
 	public ImplicitGrantConfigurer<B> authorizationRequestBaseUri(String authorizationRequestBaseUri) {
@@ -78,7 +82,9 @@ public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> ext
 	/**
 	 * Sets the repository of client registrations.
 	 *
-	 * @param clientRegistrationRepository the repository of client registrations
+	 * @param clientRegistrationRepository
+	 * 		the repository of client registrations
+	 *
 	 * @return the {@link ImplicitGrantConfigurer} for further configuration
 	 */
 	public ImplicitGrantConfigurer<B> clientRegistrationRepository(ClientRegistrationRepository clientRegistrationRepository) {
@@ -90,7 +96,8 @@ public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> ext
 	@Override
 	public void configure(B http) throws Exception {
 		OAuth2AuthorizationRequestRedirectFilter authorizationRequestFilter = new OAuth2AuthorizationRequestRedirectFilter(
-			this.getClientRegistrationRepository(), this.getAuthorizationRequestBaseUri(),getStringKeyGenerator());
+			this.getClientRegistrationRepository(), this.getAuthorizationRequestBaseUri(), getStringKeyGenerator(),
+			getAuthorizationRequestRepository());
 		http.addFilter(this.postProcess(authorizationRequestFilter));
 	}
 
@@ -113,12 +120,23 @@ public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> ext
 		return this.getBuilder().getSharedObject(ApplicationContext.class).getBean(ClientRegistrationRepository.class);
 	}
 
-	private StringKeyGenerator getStringKeyGenerator(){
+	private StringKeyGenerator getStringKeyGenerator() {
 		StringKeyGenerator stringKeyGenerator = this.getBuilder().getSharedObject(ApplicationContext.class).getBean(StringKeyGenerator.class);
-		if(stringKeyGenerator == null){
+		if (stringKeyGenerator == null) {
 			stringKeyGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
-			this.getBuilder().setSharedObject(StringKeyGenerator.class,stringKeyGenerator);
+			this.getBuilder().setSharedObject(StringKeyGenerator.class, stringKeyGenerator);
 		}
 		return stringKeyGenerator;
+	}
+
+	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> getAuthorizationRequestRepository() {
+		AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository = this.getBuilder()
+			.getSharedObject(ApplicationContext.class).getBean(AuthorizationRequestRepository.class);
+
+		if (authorizationRequestRepository == null) {
+			authorizationRequestRepository = new HttpSessionOAuth2AuthorizationRequestRepository();
+			this.getBuilder().setSharedObject(AuthorizationRequestRepository.class, authorizationRequestRepository);
+		}
+		return authorizationRequestRepository;
 	}
 }

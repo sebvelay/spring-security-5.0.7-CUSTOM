@@ -74,16 +74,15 @@ public class OAuth2AuthorizationRequestRedirectFilter extends OncePerRequestFilt
 	private final OAuth2AuthorizationRequestUriBuilder authorizationRequestUriBuilder = new OAuth2AuthorizationRequestUriBuilder();
 	private final RedirectStrategy authorizationRedirectStrategy = new DefaultRedirectStrategy();
 	private final StringKeyGenerator stateGenerator;
-	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository =
-		new HttpSessionOAuth2AuthorizationRequestRepository();
+	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
 
 	/**
 	 * Constructs an {@code OAuth2AuthorizationRequestRedirectFilter} using the provided parameters.
 	 *
 	 * @param clientRegistrationRepository the repository of client registrations
 	 */
-	public OAuth2AuthorizationRequestRedirectFilter(ClientRegistrationRepository clientRegistrationRepository,StringKeyGenerator stateGenerator) {
-		this(clientRegistrationRepository, DEFAULT_AUTHORIZATION_REQUEST_BASE_URI,stateGenerator);
+	public OAuth2AuthorizationRequestRedirectFilter(ClientRegistrationRepository clientRegistrationRepository,StringKeyGenerator stateGenerator,AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository) {
+		this(clientRegistrationRepository, DEFAULT_AUTHORIZATION_REQUEST_BASE_URI,stateGenerator,authorizationRequestRepository);
 	}
 
 	/**
@@ -93,7 +92,7 @@ public class OAuth2AuthorizationRequestRedirectFilter extends OncePerRequestFilt
 	 * @param authorizationRequestBaseUri the base {@code URI} used for authorization requests
 	 */
 	public OAuth2AuthorizationRequestRedirectFilter(
-		ClientRegistrationRepository clientRegistrationRepository, String authorizationRequestBaseUri,StringKeyGenerator stateGenerator) {
+		ClientRegistrationRepository clientRegistrationRepository, String authorizationRequestBaseUri,StringKeyGenerator stateGenerator,AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository) {
 
 		Assert.hasText(authorizationRequestBaseUri, "authorizationRequestBaseUri cannot be empty");
 		Assert.notNull(clientRegistrationRepository, "clientRegistrationRepository cannot be null");
@@ -101,6 +100,7 @@ public class OAuth2AuthorizationRequestRedirectFilter extends OncePerRequestFilt
 			authorizationRequestBaseUri + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
 		this.clientRegistrationRepository = clientRegistrationRepository;
 		this.stateGenerator=stateGenerator;
+		this.authorizationRequestRepository=authorizationRequestRepository;
 	}
 
 	/**

@@ -46,6 +46,7 @@ import org.springframework.security.oauth2.client.userinfo.DelegatingOAuth2UserS
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -389,7 +390,8 @@ public final class OAuth2LoginConfigurer<B extends HttpSecurityBuilder<B>> exten
 			new OAuth2LoginAuthenticationFilter(
 				this.getClientRegistrationRepository(),
 				this.getAuthorizedClientService(),
-				this.loginProcessingUrl);
+				this.loginProcessingUrl,
+				this.getAuthorizationRequestRepository());
 		this.setAuthenticationFilter(authenticationFilter);
 		super.loginProcessingUrl(this.loginProcessingUrl);
 		if (this.loginPage != null) {
@@ -453,7 +455,7 @@ public final class OAuth2LoginConfigurer<B extends HttpSecurityBuilder<B>> exten
 		}
 
 		OAuth2AuthorizationRequestRedirectFilter authorizationRequestFilter = new OAuth2AuthorizationRequestRedirectFilter(
-			this.getClientRegistrationRepository(), authorizationRequestBaseUri,this.getStringKeyGenerator());
+			this.getClientRegistrationRepository(), authorizationRequestBaseUri,this.getStringKeyGenerator(),this.getAuthorizationRequestRepository());
 
 		if (this.authorizationEndpointConfig.authorizationRequestRepository != null) {
 			authorizationRequestFilter.setAuthorizationRequestRepository(
@@ -494,6 +496,17 @@ public final class OAuth2LoginConfigurer<B extends HttpSecurityBuilder<B>> exten
 			this.getBuilder().setSharedObject(StringKeyGenerator.class,stringKeyGenerator);
 		}
 		return stringKeyGenerator;
+	}
+
+	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> getAuthorizationRequestRepository() {
+		AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository = this.getBuilder()
+			.getSharedObject(ApplicationContext.class).getBean(AuthorizationRequestRepository.class);
+
+		if (authorizationRequestRepository == null) {
+			authorizationRequestRepository = new HttpSessionOAuth2AuthorizationRequestRepository();
+			this.getBuilder().setSharedObject(AuthorizationRequestRepository.class, authorizationRequestRepository);
+		}
+		return authorizationRequestRepository;
 	}
 
 	private ClientRegistrationRepository getClientRegistrationRepositoryBean() {
