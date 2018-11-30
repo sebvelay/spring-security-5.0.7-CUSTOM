@@ -18,9 +18,13 @@ package org.springframework.security.config.annotation.web.configurers.oauth2.cl
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.config.annotation.web.HttpSecurityBuilder;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
+import org.springframework.security.crypto.keygen.StringKeyGenerator;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.util.Assert;
+
+import java.util.Base64;
 
 /**
  * An {@link AbstractHttpConfigurer} for the OAuth 2.0 Implicit Grant type.
@@ -86,7 +90,7 @@ public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> ext
 	@Override
 	public void configure(B http) throws Exception {
 		OAuth2AuthorizationRequestRedirectFilter authorizationRequestFilter = new OAuth2AuthorizationRequestRedirectFilter(
-			this.getClientRegistrationRepository(), this.getAuthorizationRequestBaseUri());
+			this.getClientRegistrationRepository(), this.getAuthorizationRequestBaseUri(),getStringKeyGenerator());
 		http.addFilter(this.postProcess(authorizationRequestFilter));
 	}
 
@@ -107,5 +111,14 @@ public final class ImplicitGrantConfigurer<B extends HttpSecurityBuilder<B>> ext
 
 	private ClientRegistrationRepository getClientRegistrationRepositoryBean() {
 		return this.getBuilder().getSharedObject(ApplicationContext.class).getBean(ClientRegistrationRepository.class);
+	}
+
+	private StringKeyGenerator getStringKeyGenerator(){
+		StringKeyGenerator stringKeyGenerator = this.getBuilder().getSharedObject(ApplicationContext.class).getBean(StringKeyGenerator.class);
+		if(stringKeyGenerator == null){
+			stringKeyGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
+			this.getBuilder().setSharedObject(StringKeyGenerator.class,stringKeyGenerator);
+		}
+		return stringKeyGenerator;
 	}
 }

@@ -73,7 +73,7 @@ public class OAuth2AuthorizationRequestRedirectFilter extends OncePerRequestFilt
 	private final ClientRegistrationRepository clientRegistrationRepository;
 	private final OAuth2AuthorizationRequestUriBuilder authorizationRequestUriBuilder = new OAuth2AuthorizationRequestUriBuilder();
 	private final RedirectStrategy authorizationRedirectStrategy = new DefaultRedirectStrategy();
-	private final StringKeyGenerator stateGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
+	private final StringKeyGenerator stateGenerator;
 	private AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository =
 		new HttpSessionOAuth2AuthorizationRequestRepository();
 
@@ -82,8 +82,8 @@ public class OAuth2AuthorizationRequestRedirectFilter extends OncePerRequestFilt
 	 *
 	 * @param clientRegistrationRepository the repository of client registrations
 	 */
-	public OAuth2AuthorizationRequestRedirectFilter(ClientRegistrationRepository clientRegistrationRepository) {
-		this(clientRegistrationRepository, DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
+	public OAuth2AuthorizationRequestRedirectFilter(ClientRegistrationRepository clientRegistrationRepository,StringKeyGenerator stateGenerator) {
+		this(clientRegistrationRepository, DEFAULT_AUTHORIZATION_REQUEST_BASE_URI,stateGenerator);
 	}
 
 	/**
@@ -93,13 +93,14 @@ public class OAuth2AuthorizationRequestRedirectFilter extends OncePerRequestFilt
 	 * @param authorizationRequestBaseUri the base {@code URI} used for authorization requests
 	 */
 	public OAuth2AuthorizationRequestRedirectFilter(
-		ClientRegistrationRepository clientRegistrationRepository, String authorizationRequestBaseUri) {
+		ClientRegistrationRepository clientRegistrationRepository, String authorizationRequestBaseUri,StringKeyGenerator stateGenerator) {
 
 		Assert.hasText(authorizationRequestBaseUri, "authorizationRequestBaseUri cannot be empty");
 		Assert.notNull(clientRegistrationRepository, "clientRegistrationRepository cannot be null");
 		this.authorizationRequestMatcher = new AntPathRequestMatcher(
 			authorizationRequestBaseUri + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
 		this.clientRegistrationRepository = clientRegistrationRepository;
+		this.stateGenerator=stateGenerator;
 	}
 
 	/**

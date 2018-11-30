@@ -26,6 +26,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
+import org.springframework.security.crypto.keygen.StringKeyGenerator;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2LoginAuthenticationProvider;
@@ -59,6 +61,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -450,7 +453,7 @@ public final class OAuth2LoginConfigurer<B extends HttpSecurityBuilder<B>> exten
 		}
 
 		OAuth2AuthorizationRequestRedirectFilter authorizationRequestFilter = new OAuth2AuthorizationRequestRedirectFilter(
-			this.getClientRegistrationRepository(), authorizationRequestBaseUri);
+			this.getClientRegistrationRepository(), authorizationRequestBaseUri,this.getStringKeyGenerator());
 
 		if (this.authorizationEndpointConfig.authorizationRequestRepository != null) {
 			authorizationRequestFilter.setAuthorizationRequestRepository(
@@ -482,6 +485,15 @@ public final class OAuth2LoginConfigurer<B extends HttpSecurityBuilder<B>> exten
 			this.getBuilder().setSharedObject(ClientRegistrationRepository.class, clientRegistrationRepository);
 		}
 		return clientRegistrationRepository;
+	}
+
+	private StringKeyGenerator getStringKeyGenerator(){
+		StringKeyGenerator stringKeyGenerator = this.getBuilder().getSharedObject(ApplicationContext.class).getBean(StringKeyGenerator.class);
+		if(stringKeyGenerator == null){
+			stringKeyGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
+			this.getBuilder().setSharedObject(StringKeyGenerator.class,stringKeyGenerator);
+		}
+		return stringKeyGenerator;
 	}
 
 	private ClientRegistrationRepository getClientRegistrationRepositoryBean() {
